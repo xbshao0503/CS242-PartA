@@ -10,7 +10,7 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 public class test {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args){
         String input = "C:\\Users\\Xinbo Shao\\Desktop\\lucenecore\\src\\main\\resources\\data1.json";
         JSONParser parser = new JSONParser();
 
@@ -21,9 +21,9 @@ public class test {
             JSONObject jsonObject = (JSONObject) obj;
             System.out.println(jsonObject);
 
-            String name = (String) jsonObject.get("text");
-            System.out.println("asdsadas");
-            System.out.println(name);
+            String text = (String) jsonObject.get("text");
+            System.out.println("show text:");
+            System.out.println(text);
 
 //            long age = (Long) jsonObject.get("age");
 //            System.out.println(age);
