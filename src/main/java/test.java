@@ -12,6 +12,32 @@ import org.json.simple.parser.ParseException;
 public class test {
     public static void main(String[] args) throws IOException {
         String input = "C:\\Users\\Xinbo Shao\\Desktop\\lucenecore\\src\\main\\resources\\data1.json";
+        JSONParser parser = new JSONParser();
+
+        try {
+
+            Object obj = parser.parse(new FileReader(input));
+
+            JSONObject jsonObject = (JSONObject) obj;
+            System.out.println(jsonObject);
+
+            String name = (String) jsonObject.get("text");
+            System.out.println("asdsadas");
+            System.out.println(name);
+
+//            long age = (Long) jsonObject.get("age");
+//            System.out.println(age);
+
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+    }
 
 
 
@@ -19,4 +45,3 @@ public class test {
 
     }
 
-}
