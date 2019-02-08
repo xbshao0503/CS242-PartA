@@ -12,90 +12,143 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class CreateLuceneIndex {
 
 
-    public CreateLuceneIndex(String tweetFile, String luceneDir)
-            throws IOException {
+    public CreateLuceneIndex(String Data_File, String Index_Dir)
+            throws IOException, org.apache.lucene.queryparser.classic.ParseException {
 
-        System.out.println("Indexing to directory '" + luceneDir + "'...");
-//        File inutfile = new File(luceneDir);
-        String outputpath = luceneDir;
-
-        Directory dir = FSDirectory.open(Paths.get(outputpath));
+        System.out.println("Indexing beginning");
+        Directory dir = FSDirectory.open(Paths.get(Index_Dir));
         Analyzer analyzer = new StandardAnalyzer();
-        IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
 
-        // Create will overwrite the index everytime
-        iwc.setOpenMode(OpenMode.CREATE);
-
-        // Create an index writer
-        IndexWriter writer = new IndexWriter(dir, iwc);
+        // set write mode
+        config.setOpenMode(OpenMode.CREATE);
+        IndexWriter writer = new IndexWriter(dir, config);
 
         // Add files to index
-        indexTweets(writer, tweetFile);
-        System.out.println("done");
-
-        // This makes write slower but search faster.
-        writer.forceMerge(1);
+        Indexing_Data_From_Twitter(writer, Data_File);
+        System.out.println("Indexing finished");
 
         writer.close();
+        System.out.println("=====================================");
+        System.out.println("=====================================");
 
-    }
+        System.out.println("Query Searching beginning");
+        DirectoryReader indexReader = DirectoryReader.open(dir);
+        IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+        QueryParser parser = new QueryParser("text", analyzer);
+        Query query = parser.parse("Ali Baba");
 
-    private void indexTweets(IndexWriter writer, String tweetFile) throws IOException {
-        System.out.println("Reading File");
-        String line = null;
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(tweetFile));
-            line = br.readLine();
-            int count = 0;
-            while (line != null) {
-                // extract UserId
-                String word = line.substring(0,line.indexOf('\t'));
-                line = line.substring(line.indexOf('\t')+1);
-                System.out.println(line);
+        System.out.println(query.toString());
+        int topHitCount = 100;
+        ScoreDoc[] hits = indexSearcher.search(query, topHitCount).scoreDocs;
 
-                    String[] pieces = line.split("\\:");
-
-                Document doc = new Document();
-                doc.add(new TextField("text", word, Field.Store.YES));
-                doc.add(new StoredField("id", pieces[0]));
-                doc.add(new StoredField("score", pieces[1]));
-
-                writer.addDocument(doc);
-                System.out.println(doc);
-                line = br.readLine();
-                count ++;
-                if (count % 100 == 0){
-                    System.out.println("100 words");
-                    count = 0;
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Failed to read userFile: " + e.getMessage());
+        for (int rank = 0; rank < hits.length; ++rank) {
+            Document hitDoc = indexSearcher.doc(hits[rank].doc);
+            System.out.println((rank + 1) + " (score:" + hits[rank].score + ") --> " + hitDoc.get("text"));
         }
 
+        System.out.println("Query Searching finished");
+
+
+
+    }
+
+    private void Indexing_Data_From_Twitter(IndexWriter writer, String Data_File) throws IOException {
+        System.out.println("Parsering");
+        JSONParser parser = new JSONParser();
+        try {
+            Object obj = parser.parse(new FileReader(Data_File));
+            JSONArray jsonArray = (JSONArray) obj;
+            for (int i=0;i<jsonArray.size();i++){
+                JSONObject jsonObject = (JSONObject) jsonArray.get(i);
+                //get twitter contents
+                String text = (String) jsonObject.get("text");
+
+                //get twitter user id
+                JSONObject user_info = (JSONObject) jsonObject.get("user");
+                Long userId = (Long) user_info.get("id");
+
+                //entites contents
+                JSONObject entities = (JSONObject) jsonObject.get("entities");
+
+                //get twitter hashtags
+                JSONArray hashtags = (JSONArray) entities.get("hashtags");
+                String hash_text = "null";
+                if (hashtags.size() != 0){
+                    JSONObject hash_info = (JSONObject) hashtags.get(0);
+                    hash_text = (String) hash_info.get("text") ;
+                }
+
+                //get twitter url
+                JSONArray urls = (JSONArray) entities.get("urls");
+                JSONObject url_info = (JSONObject) urls.get(0);
+                String url = (String) url_info.get("url");
+
+                //get geolocation information
+                JSONObject coordinates = (JSONObject) jsonObject.get("coordinates");
+                JSONArray geolocation = (JSONArray) coordinates.get("coordinates");
+                String geo_location = (String) ( geolocation.get(0) + "," + geolocation.get(1));
+
+                //get timestamp
+                String timestamp = (String) jsonObject.get("timestamp_ms");
+
+
+                Document doc = new Document();
+                doc.add(new TextField("text", text, Field.Store.YES));
+                doc.add(new StoredField("id", userId));
+                doc.add(new StoredField("hashTag", hash_text));
+                doc.add(new StoredField("url", url));
+                doc.add(new StoredField("geo_location", geo_location));
+                doc.add(new StoredField("timestamp", timestamp));
+
+
+                writer.addDocument(doc);
+
+//                System.out.println(doc);
+            }
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+        e.printStackTrace();
+        }
+
+
+
+
+
     }
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, org.apache.lucene.queryparser.classic.ParseException {
         if (args.length < 2) {
-            System.out.println("Usage [userFile] [luceneDir]");
+            System.out.println("Please input args[0]:data.json, args[1]:output_directory");
             System.exit(-1);
         }
         long startTime = System.currentTimeMillis();
-        CreateLuceneIndex luceneCreator = new CreateLuceneIndex(args[0],
-                args[1]);
+        CreateLuceneIndex Lucene_generator = new CreateLuceneIndex(args[0], args[1]);
         long endTime = System.currentTimeMillis();
-        System.out.println("Total execution time:" + (endTime-startTime));
+        System.out.println("Execution time:" + (endTime-startTime));
     }
 }
