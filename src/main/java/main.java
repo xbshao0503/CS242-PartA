@@ -13,9 +13,11 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.RAMDirectory;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -32,9 +34,10 @@ public class main {
         Analyzer analyzer = new StandardAnalyzer();
 
         // Store the index in memory:
-        Directory directory = new RAMDirectory();
+//        Directory directory = new RAMDirectory();
         // To store an index on disk, use this instead:
-        //Directory directory = FSDirectory.open("/tmp/testindex");
+        String outputpath = "C:\\Users\\Xinbo Shao\\Desktop\\lucenecore\\src\\main\\resources";
+        Directory directory = FSDirectory.open(Paths.get(outputpath));
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
         IndexWriter indexWriter = new IndexWriter(directory, config);
         String[] pages = {
