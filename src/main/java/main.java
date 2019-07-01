@@ -43,8 +43,7 @@ public class main {
         String[] pages = {
                 "Search engine is considered the most successful application of IR.",
                 "Collect your data and index with Lucene",
-                "index your data using Hadoop and build Web Interface",
-                "index data"
+                "index your data using Hadoop and build Web Interface data",
 
         };
         for (String page: pages) {

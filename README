@@ -1,0 +1,6 @@
+The codes are all in the "src" file.
+The executable JAR and the .bat file are in the "out" file.
+The data files are in the "src\main\resources", for convenience, we provide only a part of our data. If needed, please contact with us.
+
+Noting: due to tests, some functions in CreateLuceneIndex.java are annoatated, but they can still works.
+Please install all dependency.
