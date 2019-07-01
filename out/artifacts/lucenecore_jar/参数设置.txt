@@ -1,0 +1,7 @@
+@echo off
+java -jar lucenecore.jar "C:\\Users\\Xinbo Shao\\Desktop\\lucenecore\\src\\main\\resources\\5k.json" "C:\Users\Xinbo Shao\Desktop\lucenecore\src\main\resources" "C:\Users\Xinbo Shao\Desktop\lucenecore\src\main\resources1"
+pause
+
+参数0：读入数据文件
+参数1：输出目录
+参数2：输出目录2（没用，随便写在哪都行 但是必须有效）
